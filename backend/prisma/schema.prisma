@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String   @id @default(cuid())
+  email    String   @unique
+  password String
+  name     String?
+  role     Role     @default(OPERATOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Driver   Driver?
+}
+
+model Driver {
+  id        String   @id @default(cuid())
+  name      String
+  license   String?
+  nickname  String?
+  club      String?
+  preferNickname Boolean @default(false)
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id])
+  vehicles  Vehicle[]
+}
+
+model Vehicle {
+  id        String     @id @default(cuid())
+  plate     String     @unique
+  brand     String?
+  model     String?
+  status    String?
+  club      String?
+  driverId  String?
+  driver    Driver?    @relation(fields: [driverId], references: [id])
+  positions Position[]
+}
+
+model Route {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  geojson     Json?
+  registrations Registration[]
+}
+
+model Position {
+  id         String   @id @default(cuid())
+  vehicleId  String
+  lat        Float
+  lng        Float
+  speed      Float?
+  timestamp  DateTime @default(now())
+  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+  PILOT
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RegistrationType {
+  PILOT
+  SPECTATOR
+  SPONSOR
+}
+
+model Registration {
+  id        String   @id @default(cuid())
+  routeId   String
+  route     Route    @relation(fields: [routeId], references: [id])
+  when      DateTime
+  name      String
+  email     String
+  phone     String
+  license   String
+  motoPlate String?
+  motoBrand String?
+  motoModel String?
+  motoClub  String?
+  message   String?
+  status    RegistrationStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  type      RegistrationType @default(PILOT)
+  companyName String?
+  website     String?
+  services    String?
+  sponsorLocations SponsorLocation[]
+  dates     SponsorDate[]
+}
+
+model SponsorLocation {
+  id             String   @id @default(cuid())
+  registrationId String
+  registration   Registration @relation(fields: [registrationId], references: [id])
+  lat            Float
+  lng            Float
+  label          String?
+  category       String?
+  note           String?
+  createdAt      DateTime @default(now())
+}
+
+model SponsorDate {
+  id             String   @id @default(cuid())
+  registrationId String
+  registration   Registration @relation(fields: [registrationId], references: [id])
+  when           DateTime
+  createdAt      DateTime @default(now())
+}
+

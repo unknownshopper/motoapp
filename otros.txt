@@ -1,0 +1,13 @@
+anonimus@anonimus-NUC11ATKC4:~/sista/motoapp$ curl -X POST http://localhost:3001/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"the@unknownshoppers.com","password":"shopper01","name":"Admin"}
+'
+{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWhpZWFnb3QwMDAwMTFmNnlxODZ6dzl3IiwiZW1haWwiOiJ0aGVAdW5rbm93bnNob3BwZXJzLmNvbSIsInJvbGUiOiJPUEVSQVRPUiIsImlhdCI6MTc2MjEyOTMwNCwiZXhwIjoxNzYyNzM0MTA0fQ.Lv3h20z3xebjN8OfRdU8ruJ64uD5MNFMtDyIvZZawOc"}anonimus@anonimus-NUC11ATKC4curl -X POST http://localhost:3001/auth/login \:3001/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"the@unknownshoppers.com","password":"shopper01"}'
+{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWhpZWFnb3QwMDAwMTFmNnlxODZ6dzl3IiwiZW1haWwiOiJ0aGVAdW5rbm93bnNob3BwZXJzLmNvbSIsInJvbGUiOiJPUEVSQVRPUiIsImlhdCI6MTc2MjEyOTM1MiwiZXhwIjoxNzYyNzM0MTUyfQ.iVMvn1FIkYPlo1fbOY9yCrAe17WVsTHqBWkSiCg2TME"}anonimus@anonimus-NUC11ATKC4:~/sista/motoapp$ 
+
+
+
+curl http://localhost:3001/vehicles \
+  -H "Authorization: Bearer TOKEN"
