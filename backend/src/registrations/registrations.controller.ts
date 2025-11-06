@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Param, Delete, UseGuards, Req, ForbiddenException, BadRequestException, Query } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Param, Delete, UseGuards, Req, ForbiddenException, BadRequestException, Query, ConflictException } from '@nestjs/common';
 import { RegistrationsService } from './registrations.service';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -18,7 +18,9 @@ export class RegistrationsController {
       if (!dto.phone?.trim()) throw new BadRequestException('phone required');
       if (!type) throw new BadRequestException('type required');
       if (type === 'PILOT' || type === 'SPECTATOR' || type === 'SPONSOR') {
-        if (!dto.routeId?.trim()) throw new BadRequestException('routeId required');
+        const hasRouteId = typeof (dto as any).routeId === 'string' && (dto as any).routeId.trim().length > 0;
+        const hasRouteSlug = typeof (dto as any).routeSlug === 'string' && (dto as any).routeSlug.trim().length > 0;
+        if (!hasRouteId && !hasRouteSlug) throw new BadRequestException('routeId or routeSlug required');
         // 'when' es obligatorio para PILOT y SPECTATOR, pero opcional para SPONSOR
         if ((type === 'PILOT' || type === 'SPECTATOR') && !dto.when?.trim()) throw new BadRequestException('when required');
       }
@@ -37,7 +39,7 @@ export class RegistrationsController {
     } catch (e: any) {
       // Log para diagnóstico
       console.error('Registration create error', { dto, error: e?.message });
-      if (e instanceof BadRequestException) throw e;
+      if (e instanceof BadRequestException || e instanceof ConflictException) throw e;
       throw new BadRequestException('Invalid registration payload');
     }
   }

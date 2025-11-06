@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
 
@@ -7,8 +7,33 @@ export class RegistrationsService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateRegistrationDto) {
+    // Resolver routeId desde routeSlug si es necesario
+    let routeId = dto.routeId;
+    if (!routeId && (dto as any).routeSlug) {
+      const route = await this.prisma.route.findUnique({ where: ({ slug: (dto as any).routeSlug } as unknown) as any });
+      if (!route) throw new NotFoundException('Route not found');
+      routeId = route.id;
+    }
+    if (!routeId) throw new NotFoundException('Route not specified');
+    // Regla: 1 ruta, 1 piloto, 1 vehículo (evitar duplicados en misma ruta)
+    if (dto.type === 'PILOT') {
+      const exists = await this.prisma.registration.findFirst({
+        where: {
+          routeId,
+          type: 'PILOT' as any,
+          OR: [
+            { email: dto.email },
+            ...(dto.license ? [{ license: dto.license }] : []),
+            ...(dto.motoPlate ? [{ motoPlate: dto.motoPlate }] : []),
+          ] as any,
+        } as any,
+      });
+      if (exists) {
+        throw new ConflictException('Pilot already registered for this route');
+      }
+    }
     const baseData = {
-      routeId: dto.routeId,
+      routeId,
       name: dto.name,
       email: dto.email,
       phone: dto.phone,
@@ -98,12 +123,14 @@ export class RegistrationsService {
     const updated = await this.prisma.registration.update({ where: { id }, data: { status: status as any } });
     if (status === 'APPROVED' && (reg as any).type === 'PILOT') {
       // Crear Driver y Vehicle en base al registro
+      const slug = await this.makeUniqueDriverSlug(reg.name);
       const driver = await this.prisma.driver.create({
         data: {
           name: reg.name,
           license: reg.license,
           club: reg.motoClub || undefined,
           preferNickname: false,
+          slug,
         },
       });
       let vehicle: any = null;
@@ -121,6 +148,29 @@ export class RegistrationsService {
       return { updated, driver, vehicle };
     }
     return { updated };
+  }
+
+  private slugify(s: string) {
+    return (s || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  }
+
+  private async makeUniqueDriverSlug(name: string) {
+    const base = this.slugify(name);
+    let candidate = base || 'pilot';
+    let i = 2;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const found = await this.prisma.driver.findFirst({ where: { slug: candidate } as any });
+      if (!found) return candidate;
+      candidate = `${base || 'pilot'}-${i++}`;
+    }
   }
 
   // Admin: actualizar campos básicos del registro (patrocinador)

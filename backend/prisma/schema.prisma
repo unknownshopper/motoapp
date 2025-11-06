@@ -28,6 +28,7 @@ model Driver {
   userId    String?  @unique
   user      User?    @relation(fields: [userId], references: [id])
   vehicles  Vehicle[]
+  slug      String?  @unique
 }
 
 model Vehicle {
@@ -48,6 +49,7 @@ model Route {
   description String?
   geojson     Json?
   registrations Registration[]
+  slug        String?  @unique
 }
 
 model Position {
@@ -100,6 +102,10 @@ model Registration {
   services    String?
   sponsorLocations SponsorLocation[]
   dates     SponsorDate[]
+
+  @@unique([routeId, email, type])
+  @@unique([routeId, license, type])
+  @@unique([routeId, motoPlate, type])
 }
 
 model SponsorLocation {

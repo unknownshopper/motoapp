@@ -6,10 +6,11 @@ import { DriversModule } from './drivers/drivers.module';
 import { RoutesModule } from './routes/routes.module';
 import { PositionsModule } from './positions/positions.module';
 import { RegistrationsModule } from './registrations/registrations.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [AuthModule, VehiclesModule, DriversModule, RoutesModule, PositionsModule, RegistrationsModule],
-  controllers: [],
+  controllers: [AppController],
   providers: [PrismaService],
 })
 export class AppModule {}

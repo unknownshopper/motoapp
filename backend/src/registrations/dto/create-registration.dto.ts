@@ -1,15 +1,21 @@
-import { IsArray, IsEmail, IsEnum, IsISO8601, IsNumber, IsOptional, IsString, Length, ValidateNested } from 'class-validator';
+import { IsArray, IsEmail, IsEnum, IsISO8601, IsNumber, IsOptional, IsString, Length, ValidateNested, ValidateIf } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateRegistrationDto {
   @IsEnum(['PILOT', 'SPECTATOR', 'SPONSOR'] as any)
   type!: 'PILOT' | 'SPECTATOR' | 'SPONSOR';
 
+  @ValidateIf((o: any) => !o.routeSlug)
   @IsString()
-  routeId!: string;
+  routeId?: string;
 
+  @IsOptional()
+  @IsString()
+  routeSlug?: string;
+
+  @ValidateIf((o: any) => o.type !== 'SPONSOR')
   @IsISO8601()
-  when!: string; // ISO string from frontend
+  when?: string; // ISO string from frontend
 
   @IsOptional()
   @IsArray()
@@ -27,13 +33,14 @@ export class CreateRegistrationDto {
   @Length(5, 30)
   phone!: string;
 
-  @IsOptional()
+  @ValidateIf((o: any) => o.type === 'PILOT')
   @IsString()
   @Length(3, 50)
   license?: string;
 
-  @IsOptional()
+  @ValidateIf((o: any) => o.type === 'PILOT')
   @IsString()
+  @Length(2, 20)
   motoPlate?: string;
 
   @IsOptional()

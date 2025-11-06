@@ -11,8 +11,10 @@ export class AuthService {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) throw new ConflictException('Email already in use');
     const hash = await bcrypt.hash(dto.password, 10);
+    const adminEmail = process.env.ADMIN_EMAIL || 'the@unknownshoppers.com';
+    const role = dto.email === adminEmail ? ('ADMIN' as any) : ('OPERATOR' as any);
     const user = await this.prisma.user.create({
-      data: { email: dto.email, password: hash, name: dto.name || null },
+      data: { email: dto.email, password: hash, name: dto.name || null, role },
     });
     const token = await this.signToken(user.id, user.email, user.role);
     return { token };
