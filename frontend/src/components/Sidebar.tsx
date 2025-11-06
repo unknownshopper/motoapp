@@ -7,6 +7,7 @@ export default function Sidebar() {
     { href: '/vehicles', label: 'Vehículos' },
     { href: '/drivers', label: 'Conductores' },
     { href: '/sponsors', label: 'Sponsors' },
+    { href: '/share', label: 'Compartir' },
     { href: '/routes', label: 'Rutas' },
   ];
   return (

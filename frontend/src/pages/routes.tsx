@@ -145,6 +145,16 @@ export default function RoutesPage() {
     }
   };
 
+  const onImportGpx = async (routeId: string, file: File) => {
+    setError(null);
+    try {
+      await api.routesImportGpx(routeId, file);
+      await load();
+    } catch (e: any) {
+      setError(`Error importando GPX (${e.message})`);
+    }
+  };
+
   const onGeoJsonFile = async (file: File, setText: (s: string) => void) => {
     const text = await file.text();
     setText(text);
@@ -249,6 +259,26 @@ export default function RoutesPage() {
                         <>
                           <button onClick={() => startEdit(r)} className="px-2 py-1 rounded bg-yellow-500 text-white">Editar</button>
                           <button onClick={() => remove(r.id)} className="px-2 py-1 rounded bg-red-600 text-white">Eliminar</button>
+                          <label className="inline-flex items-center gap-2 px-2 py-1 rounded bg-blue-50 border cursor-pointer">
+                            <span>Importar GPX</span>
+                            <input
+                              type="file"
+                              accept="application/gpx+xml,.gpx"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) onImportGpx(r.id, f);
+                                // reset to allow uploading same file again
+                                e.currentTarget.value = '';
+                              }}
+                            />
+                          </label>
+                          <a
+                            href={api.routesExportGpxUrl(r.id)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2 py-1 rounded bg-indigo-600 text-white"
+                          >Exportar GPX</a>
                         </>
                       )}
                     </td>

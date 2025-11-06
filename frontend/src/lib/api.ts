@@ -130,6 +130,25 @@ export const api = {
   async routesDelete(id: string) {
     return request(`/routes/${id}`, { method: 'DELETE' });
   },
+  async routesImportGpx(id: string, file: File) {
+    const token = getToken();
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch(`${API_URL}/routes/${id}/import-gpx`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } as any : undefined,
+      body: fd,
+    });
+    if (!res.ok) {
+      let message = `HTTP ${res.status}`;
+      try { message = await res.text(); } catch {}
+      throw new Error(message || 'Upload failed');
+    }
+    return res.json();
+  },
+  routesExportGpxUrl(id: string) {
+    return `${API_URL}/routes/${id}/export.gpx`;
+  },
   // Positions
   async positionsCreate(payload: { vehicleId: string; lat: number; lng: number; speed?: number; timestamp?: string }) {
     return request('/positions', { method: 'POST', body: JSON.stringify(payload) });

@@ -1,5 +1,6 @@
 import type { AppProps } from 'next/app';
 import '../styles/globals.css';
+import 'leaflet/dist/leaflet.css';
 import Layout from '../components/Layout';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useRef } from 'react';
 import Sidebar from './Sidebar';
 import { api } from '../lib/api';
 import { useRouter } from 'next/router';
@@ -7,10 +7,22 @@ import { useRouter } from 'next/router';
 export default function Layout({ children, title }: { children: ReactNode; title?: string }) {
   const [user, setUser] = useState<{ id?: string; email?: string; role?: string; name?: string; username?: string } | null>(null);
   const router = useRouter();
+  const ranRef = useRef(false);
+  // Set from decoded token immediately (no network)
   useEffect(() => {
+    setUser(api.getCurrentUser());
+  }, []);
+  useEffect(() => {
+    if (ranRef.current) return;
+    ranRef.current = true;
     let cancelled = false;
     (async () => {
       try {
+        const t = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        if (!t) {
+          if (!cancelled) setUser(null);
+          return;
+        }
         const me = await api.me();
         if (!cancelled) setUser(me || api.getCurrentUser());
       } catch {
@@ -19,6 +31,23 @@ export default function Layout({ children, title }: { children: ReactNode; title
     })();
     return () => { cancelled = true; };
   }, []);
+  // Refresh user info on route changes (e.g., after login redirect)
+  useEffect(() => {
+    const handler = async () => {
+      const t = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (!t) { setUser(null); return; }
+      // Fast update from token, then try to validate with backend
+      setUser(api.getCurrentUser());
+      try {
+        const me = await api.me();
+        setUser(me || api.getCurrentUser());
+      } catch {
+        // keep decoded user
+      }
+    };
+    router.events.on('routeChangeComplete', handler);
+    return () => { router.events.off('routeChangeComplete', handler); };
+  }, [router.events]);
   return (
     <div className="min-h-screen flex bg-gray-100">
       <Sidebar />

@@ -35,7 +35,7 @@ export default function TrackingMapInner() {
   const [tempPois, setTempPois] = useState<Array<{ lat: number; lng: number; type: string; name?: string }>>([]);
   const liveEnabledRef = useRef(true);
   useEffect(() => { liveEnabledRef.current = !poiMode; }, [poiMode]);
-  const [autoFit, setAutoFit] = useState(false);
+  const [autoFit, setAutoFit] = useState(true);
   const userInteractedRef = useRef(false);
   const userInteractTimerRef = useRef<any>(null);
   const prevSelectedIdRef = useRef<string>('');
@@ -77,6 +77,10 @@ export default function TrackingMapInner() {
         if (t) clearInterval(t);
         simTimersRef.current.delete(id);
       });
+    }
+    // trigger a fit on selection change if autoFit is enabled
+    if (selectedId && autoFit) {
+      fitTriggerRef.current = Date.now();
     }
   }, [selectedId]);
 
@@ -146,12 +150,8 @@ export default function TrackingMapInner() {
         <div style="
           width:24px;height:24px;border-radius:50%;
           background:${color}; display:flex; align-items:center; justify-content:center;
-          box-shadow:0 1px 3px rgba(0,0,0,0.3);
-        ">
-          <span style="font-size:14px;">🏍️</span>
-        </div>
-        <div style="position:absolute; right:-6px; top:-6px; width:16px; height:16px; border-radius:50%; background:#111; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center;">
-          ${num}
+          box-shadow:0 1px 3px rgba(0,0,0,0.3); color:#fff; font-size:12px; font-weight:600;
+        ">${num}
         </div>
       </div>`;
     return L.divIcon({ html, className: 'moto-marker', iconSize: [24, 24], iconAnchor: [12, 24] });

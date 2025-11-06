@@ -232,3 +232,41 @@ Usa Leaflet para mostrar las rutas y ubicaciones en tiempo real.
 - Backend: endpoints para CRUD de `SponsorDate` si se requiere modificar fechas desde admin.
 - Cerrar warnings de tipos pendientes en service (accesor de Prisma tipado para `sponsorDate`/`sponsorLocation`).
 - Deploy gratuito: configurar Render (backend) y Vercel (frontend) con Supabase (DB) usando las variables listadas arriba.# motoapp
+
+## Cambios recientes (Nov 2025)
+- Frontend
+  - Eliminado el `<link rel="stylesheet" href="https://unpkg.com/leaflet...">` en `pages/index.tsx` para cumplir con la guía de Next.js. El CSS de Leaflet se importa globalmente en `_app.tsx`.
+  - `Layout.tsx`: se añadió un guard con `useRef` para que el efecto que llama a `api.me()` no se ejecute dos veces bajo React Strict Mode, y se inicializa el `user` desde el JWT decodificado. Además, se refresca el usuario tras cambios de ruta (`routeChangeComplete`).
+  - `TrackingMapInner.tsx`: se eliminó el gate por rol para cargar la lista de vehículos al montar; ahora se consulta siempre (el backend decide permisos) y se evitan listas vacías por timing.
+- Backend
+  - Sin cambios funcionales en endpoints. Recordatorio: muchos endpoints son protegidos por JWT. `registrations/sponsors-public` es público; `registrations/pending` y mutaciones requieren rol ADMIN.
+
+## Guía rápida para levantar y depurar
+- Backend (Nest, puerto 3001):
+  - `cd backend && npm install && npm run start:dev`
+  - Variables: `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN` (opcional), `PORT` (opcional).
+- Frontend (Next, puerto 3000):
+  - `cd frontend && npm install && npm run dev`
+  - `.env.local` ya apunta a `http://localhost:3001` para REST y WS.
+- Revisar consola
+  - Navegador: errores de UI/Network.
+  - Terminal backend: logs de Nest/Prisma.
+
+## Troubleshooting funcional
+- Rutas no se dibujan en /tracking
+  - Verifica en `/routes` que la columna "GeoJSON" diga "Sí". Si dice "No", importa GPX o pega GeoJSON y guarda (o dibuja desde /tracking y guarda).
+- Vehículos o conductores no aparecen
+  - Revisa Network: `GET /vehicles` y `GET /drivers` deben responder 200 con datos. Si 401/403, revisa que existan `token` y cabecera `Authorization`.
+  - En Tracking, tras seleccionar ruta, marca vehículos y usa "Iniciar todos" para simular posiciones (`POST /positions`).
+- Sponsors/POIs no aparecen en "Aprobados"
+  - Solo se muestran los de estado `APPROVED`. Cambia a pestaña "Solicitudes" (ADMIN) y aprueba.
+- 401 a `/auth/me` en no autenticado
+  - Es esperado si no hay sesión. El guard de `Layout` evita repeticiones por Strict Mode.
+- Datos "desaparecidos"
+  - Confirma que el backend esté conectado a la misma base (`DATABASE_URL`). Si apunta a otra BD, verás listas vacías.
+
+## Próximos pasos inmediatos
+- Confirmar que el encabezado muestra la sesión (email/rol) tras login.
+- Asegurar al menos una ruta con GeoJSON para probar /tracking y la exportación GPX.
+- Aprobar sponsors existentes para que aparezcan en la pestaña pública.
+- Opcional: añadir logs discretos en `api.request` (solo dev) para trazar 401/403 si persisten.
