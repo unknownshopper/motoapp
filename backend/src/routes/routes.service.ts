@@ -39,6 +39,14 @@ export class RoutesService {
 
   async remove(id: string) {
     await this.findOne(id);
+    // Manually remove dependent data to avoid FK violations
+    const regs = await this.prisma.registration.findMany({ where: { routeId: id }, select: { id: true } });
+    if (regs.length > 0) {
+      const regIds = regs.map((r) => r.id);
+      await this.prisma.sponsorLocation.deleteMany({ where: { registrationId: { in: regIds } } });
+      await this.prisma.sponsorDate.deleteMany({ where: { registrationId: { in: regIds } } });
+      await this.prisma.registration.deleteMany({ where: { id: { in: regIds } } });
+    }
     await this.prisma.route.delete({ where: { id } });
     return { ok: true };
   }

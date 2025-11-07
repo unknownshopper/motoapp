@@ -76,6 +76,7 @@ export default function RoutesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<{ name: string; description: string; geojsonText: string }>({ name: '', description: '', geojsonText: '' });
+  const [gpxFile, setGpxFile] = useState<File | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ name: string; description: string; geojsonText: string }>({ name: '', description: '', geojsonText: '' });
@@ -101,12 +102,22 @@ export default function RoutesPage() {
     e.preventDefault();
     setError(null);
     try {
-      let geojson: any = undefined;
-      if (form.geojsonText.trim()) {
-        geojson = JSON.parse(form.geojsonText);
+      // Caso 1: Subida directa de GPX -> crear ruta y luego importar GPX
+      if (gpxFile) {
+        const created = await api.routesCreate({ name: form.name, description: form.description || undefined });
+        const routeId = (created && (created.id || created.route?.id)) ?? created?.id;
+        if (!routeId) throw new Error('No se obtuvo el ID de la ruta creada');
+        await api.routesImportGpx(routeId, gpxFile);
+      } else {
+        // Caso 2: GeoJSON pegado o archivo GeoJSON
+        let geojson: any = undefined;
+        if (form.geojsonText.trim()) {
+          geojson = JSON.parse(form.geojsonText);
+        }
+        await api.routesCreate({ name: form.name, description: form.description || undefined, geojson });
       }
-      await api.routesCreate({ name: form.name, description: form.description || undefined, geojson });
       setForm({ name: '', description: '', geojsonText: '' });
+      setGpxFile(null);
       await load();
     } catch (e: any) {
       setError(`Error creando ruta (${e.message})`);
@@ -180,13 +191,21 @@ export default function RoutesPage() {
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
           />
-          <div className="md:col-span-2 flex items-center gap-2">
+          <div className="md:col-span-2 flex items-center gap-2 flex-wrap">
             <input
               type="file"
               accept="application/geo+json,application/json,.geojson,.json"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) onGeoJsonFile(file, (s) => setForm((f) => ({ ...f, geojsonText: s })));
+              }}
+            />
+            <input
+              type="file"
+              accept="application/gpx+xml,.gpx"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                setGpxFile(file);
               }}
             />
             <button className="px-3 py-1 rounded bg-blue-600 text-white">Guardar</button>
